@@ -102,3 +102,52 @@ ORDER BY order_id
 )
 SELECT * FROM pop
 WHERE product_rank = 2;
+
+-- View the columns of interest
+SELECT 
+	customer_id, order_id, product_id, transaction_id, order_date, units
+FROM orders;
+
+-- For each customer, return the total units within each order
+SELECT 
+	customer_id, order_id, transaction_id, SUM(units) AS total_units
+FROM orders
+GROUP BY customer_id, order_id
+ORDER BY customer_id;
+
+-- Add on the transaction id to keep track of the order of the orders
+SELECT customer_id, order_id, MIN(transaction_id) AS min_tid, SUM(units) AS total_units
+FROM orders
+GROUP BY customer_id, order_id
+ORDER BY customer_id, min_tid;
+
+-- Turn the query into a CTE and view the column of interest
+WITH my_cte AS(
+SELECT customer_id, order_id, MIN(transaction_id) AS min_tid, SUM(units) AS total_units
+FROM orders
+GROUP BY customer_id, order_id
+ORDER BY customer_id, min_tid
+)
+SELECT 
+	customer_id, order_id, total_units
+FROM my_cte;
+
+-- Create a prior units column
+WITH my_cte AS (
+    SELECT 
+        customer_id, 
+        order_id, 
+        MIN(transaction_id) AS min_tid, 
+        SUM(units) AS total_units
+    FROM orders
+    GROUP BY customer_id, order_id
+)
+SELECT 
+    customer_id, 
+    order_id, 
+    total_units,
+    LAG(total_units) OVER (
+        PARTITION BY customer_id 
+        ORDER BY min_tid
+    ) AS prev_total_units
+FROM my_cte;
