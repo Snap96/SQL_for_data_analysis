@@ -151,3 +151,55 @@ SELECT
         ORDER BY min_tid
     ) AS prev_total_units
 FROM my_cte;
+
+-- For each customer, find the change in units per over time
+WITH my_cte AS (
+    SELECT 
+        customer_id, 
+        order_id, 
+        MIN(transaction_id) AS min_tid, 
+        SUM(units) AS total_units
+    FROM orders
+    GROUP BY customer_id, order_id
+)
+SELECT 
+    customer_id, 
+    order_id, 
+    total_units,
+    LAG(total_units) OVER (
+        PARTITION BY customer_id 
+        ORDER BY min_tid
+    ) AS prev_total_units,
+    total_units - LAG(total_units) OVER (
+        PARTITION BY customer_id 
+        ORDER BY min_tid
+    )
+    
+FROM my_cte;
+
+-- final query
+WITH my_cte AS (
+    SELECT 
+        customer_id, 
+        order_id, 
+        MIN(transaction_id) AS min_tid, 
+        SUM(units) AS total_units
+    FROM orders
+    GROUP BY customer_id, order_id
+),
+prior_cte AS(
+	SELECT customer_id, 
+        order_id, total_units,
+	total_units - LAG(total_units) OVER (
+        PARTITION BY customer_id 
+        ORDER BY min_tid
+    ) AS prev_total_units
+    FROM my_cte
+)
+SELECT 
+    customer_id, 
+    order_id, 
+    total_units,
+	prev_total_units,
+    total_units - prev_total_units AS diff_units
+FROM prior_cte;
