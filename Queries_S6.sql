@@ -203,3 +203,41 @@ SELECT
 	prev_total_units,
     total_units - prev_total_units AS diff_units
 FROM prior_cte;
+
+-- Assignment: statistical functions
+SELECT * FROM orders;
+
+-- connect two table and indicate the cost of the units
+SELECT 
+	o.customer_id, SUM(o.units * unit_price) AS amount_spent,
+    NTILE(100) OVER(PARTITION BY o.customer_id) AS spend_pct
+FROM orders o 
+LEFT JOIN products p
+ON o.product_id = p.product_id
+GROUP BY o.customer_id
+ORDER BY o.customer_id;
+
+-- Create CTE
+WITH top_cus AS (
+    SELECT 
+        o.customer_id, 
+        SUM(o.units * p.unit_price) AS amount_spent
+    FROM orders o
+    INNER JOIN products p
+        ON o.product_id = p.product_id
+    GROUP BY o.customer_id
+),
+ranked AS (
+    SELECT 
+        customer_id, 
+        amount_spent,
+        NTILE(100) OVER (ORDER BY amount_spent DESC) AS spend_pct
+    FROM top_cus
+)
+SELECT 
+    customer_id, 
+    amount_spent,
+    spend_pct
+FROM ranked
+WHERE spend_pct = 1   -- top 1% of customers
+ORDER BY amount_spent DESC;

@@ -180,4 +180,54 @@ WITH hs_prior AS
 SELECT
 	country, year, happiness_score, prior_happiness_score,
     happiness_score - prior_happiness_score AS hs_change
-FROM hs_prior
+FROM hs_prior;
+
+-- NTILE() divides the rows in a  window into specified number of percentiles
+-- View the top 25% of happiness scores for each region
+
+SELECT 
+	region, country, happiness_score,
+    NTILE(4) OVER(PARTITION BY region ORDER BY happiness_score DESC) AS hs_percentile
+FROM happiness_scores
+WHERE year = 2023;
+
+-- View the top 25% of happiness scores for each region
+WITH hs_pct AS (
+	SELECT 
+		region, country, happiness_score,
+		NTILE(4) OVER(PARTITION BY region ORDER BY happiness_score DESC) AS hs_percentile
+	FROM happiness_scores
+	WHERE year = 2023
+)
+SELECT *
+FROM hs_pct
+WHERE hs_percentile = 1
+ORDER BY region, happiness_score DESC;
+
+-- 5. NILE
+-- Add a percentile to each row of data
+SELECT 
+	region, country, happiness_score,
+    NTILE(4) OVER(PARTITION BY region ORDER BY happiness_score DESC) AS hs_percentile
+FROM happiness_scores
+WHERE year = 2023
+ORDER BY region, happiness_score DESC, hs_percentile;
+
+-- For each region, return the top 25% of countries in terms of happiness score
+WITH hs_pct AS (
+	SELECT 
+		region, country, happiness_score,
+		NTILE(4) OVER(PARTITION BY region ORDER BY happiness_score DESC) AS hs_percentile
+	FROM happiness_scores
+	WHERE year = 2023
+	ORDER BY region, happiness_score DESC, hs_percentile
+)
+SELECT *
+FROM hs_pct
+WHERE hs_percentile = 1;
+
+-- Calculate the three year moving average of happiness scores
+SELECT 
+	country, year, happiness_score,
+    AVG(happiness_score) OVER (PARTITION BY country ORDER BY year ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS three_year_ma
+FROM happiness_scores
