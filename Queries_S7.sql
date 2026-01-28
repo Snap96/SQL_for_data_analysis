@@ -103,3 +103,40 @@ SELECT
         ELSE SUBSTR(product_name, INSTR(product_name, '-') + 2)
     END AS new_product
 FROM products;
+
+-- Assignment 5 : Null Functions
+-- View the columns of interest
+
+-- Replace NULL values with other
+SELECT 
+	product_name, factory, division,
+    COALESCE(division, 'Other') AS disvision_other
+FROM products;
+
+-- Find the most common division for each other
+SELECT 
+	factory, division, COUNT(product_name)
+FROM products
+WHERE division IS NOT NULL
+GROUP BY factory, division
+ORDER BY factory, division;
+
+-- Replace NULL values with top division for factory
+WITH np AS(
+	SELECT 
+		factory, division, COUNT(product_name) AS num_products
+	FROM products
+	WHERE division IS NOT NULL
+	GROUP BY factory, division
+	ORDER BY factory, division
+),
+np_rank AS
+(
+	SELECT 
+		factory, division, num_products,
+		ROW_NUMBER() OVER(PARTITION BY factory ORDER BY num_products DESC) AS np_rank
+	FROM np
+)
+SELECT * 
+FROM np_rank
+WHERE np_rank = 1;
