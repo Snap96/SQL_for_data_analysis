@@ -242,6 +242,8 @@ FROM my_events;
 
 -- String Functions
 -- Cleaned up event type and found the length of the description
+USE maven_advanced_sql;
+
 SELECT
 	event_name, event_type,
     TRIM(REPLACE(event_type, '!', '')) AS event_type_clean,
@@ -257,3 +259,17 @@ SELECT
 	event_name, event_type_clean, event_desc,
     CONCAT(e.event_type_clean, ' | ', event_desc) AS full_desc
 FROM my_events;
+
+-- Combine the type and description columns
+WITH my_events_clean AS(
+	SELECT 
+		event_name, event_type,
+        TRIM(REPLACE(event_type, '!', '')) AS event_type_clean,
+        event_desc,
+        LENGTH(event_desc) AS desc_len
+	FROM my_events
+)
+SELECT
+	event_name, event_type_clean, event_desc,
+    CONCAT(event_type_clean, ' | ', event_desc) AS full_desc
+FROM my_events_clean;

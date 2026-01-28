@@ -55,3 +55,24 @@ SELECT
     DATE_ADD(order_date, INTERVAL 2 DAY) AS ship_date
 FROM orders 
 WHERE YEAR(order_date) = 2024 AND MONTH(order_date) BETWEEN 4 AND 6;
+
+-- Assignment 3 : String functions
+-- TRIM(REPLACE(event_type, '!', ''))
+WITH updated_product AS (
+	SELECT
+		TRIM(REPLACE(factory, '''', '')) AS factory_edited, product_id
+	FROM products
+)
+SELECT
+	REPLACE(factory_edited, ' ', '-') AS factory, product_id,
+    CONCAT(REPLACE(factory_edited, ' ', '-'),'-', product_id) AS factory_product_id
+FROM updated_product
+ORDER BY factory;
+
+-- A version with no CTE
+SELECT 
+    REPLACE(TRIM(REPLACE(factory, '''', '')), ' ', '-') AS factory,
+    product_id,
+    CONCAT(REPLACE(TRIM(REPLACE(factory, '''', '')), ' ', '-'), '-', product_id) AS factory_product_id
+FROM products
+ORDER BY factory;
