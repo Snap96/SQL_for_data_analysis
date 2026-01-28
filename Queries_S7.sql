@@ -76,3 +76,30 @@ SELECT
     CONCAT(REPLACE(TRIM(REPLACE(factory, '''', '')), ' ', '-'), '-', product_id) AS factory_product_id
 FROM products
 ORDER BY factory;
+
+-- Assignment 4 : String functions pattern matching
+
+SELECT 
+    product_name,
+    CASE 
+        WHEN INSTR(product_name, 'Wonka Bar -') > 0 
+        THEN SUBSTR(product_name, INSTR(product_name, 'Wonka Bar -') + LENGTH('Wonka Bar -'))
+        ELSE product_name
+    END AS new_product
+FROM products;
+
+-- Alternative way
+SELECT 
+	product_name,
+    REPLACE(product_name,'Wonka Bar -', '') AS new_product_name
+FROM products
+ORDER BY product_name;
+
+-- Another alternative way
+SELECT 
+    product_name,
+    CASE 
+        WHEN INSTR(product_name, '-') = 0 THEN product_name
+        ELSE SUBSTR(product_name, INSTR(product_name, '-') + 2)
+    END AS new_product
+FROM products;
