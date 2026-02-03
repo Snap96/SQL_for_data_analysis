@@ -138,3 +138,35 @@ ON s.id = sg.student_id
 WHERE sg.department IS NOT NULL
 GROUP BY sg.department
 ORDER BY sg.department;
+
+-- ASSIGNMENT 4: Rolling calculations
+-- Calculate the total sales each month
+SELECT *
+FROM orders;
+
+SELECT *
+FROM products;
+
+SELECT 
+	YEAR(o.order_date) AS yr, MONTH(o.order_date) AS mnth, SUM(o.units * p.unit_price) AS total_sales
+FROM orders o
+LEFT JOIN products p
+ON o.product_id = p.product_id
+GROUP BY YEAR(o.order_date), MONTH(o.order_date)
+ORDER BY YEAR(o.order_date), MONTH(o.order_date);
+
+-- Add on the cumulative sum and 6 month moving average
+WITH ms AS (
+	SELECT 
+		YEAR(o.order_date) AS yr, MONTH(o.order_date) AS mnth, SUM(o.units * p.unit_price) AS total_sales
+	FROM orders o
+	LEFT JOIN products p
+	ON o.product_id = p.product_id
+	GROUP BY YEAR(o.order_date), MONTH(o.order_date)
+	ORDER BY YEAR(o.order_date), MONTH(o.order_date)
+)
+SELECT *,
+	ROW_NUMBER() OVER(ORDER BY yr, mnth) AS rn,
+    SUM(total_sales) OVER(ORDER BY yr, mnth) AS cumlative_sum,
+    AVG(total_sales) OVER(ORDER BY yr, mnth ROWS BETWEEN 5 PRECEDING AND CURRENT ROW) AS six_month_ma
+FROM ms;
