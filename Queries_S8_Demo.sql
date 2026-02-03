@@ -280,3 +280,56 @@ SELECT
     OVER (PARTITION BY country ORDER BY year ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 3) AS row_num
 FROM happiness_scores
 ORDER BY country, year;
+
+-- Imputing values means replacing NULL values in the data with other values
+
+/*
+We'll cover four different approaches on how to do this in SQL
+1. Hard coded value (integer)
+2. Average of a column (subquery)
+3. Prior row's value (window function)
+4. smoothed value (two window functions)
+*/
+
+CREATE TABLE IF NOT EXISTS stock_prices(
+	date DATE PRIMARY KEY,
+    price DECIMAL(10,2)
+);
+
+INSERT INTO stock_prices(date, price) VALUES
+('2024-11-01', 678.27),
+('2024-11-03', 688.83),
+('2024-11-04', 645.40),
+('2024-11-06', 591.01);
+
+-- Recursive CTE from earlier
+WITH RECURSIVE my_dates(dt) AS (SELECT '2024-11-01'
+								UNION ALL
+								SELECT dt + INTERVAL 1 DAY
+								FROM my_dates
+								WHERE dt < '2024-11-06')
+                                
+	 SELECT	md.dt, sp.price
+			FROM	my_dates md
+					LEFT JOIN stock_prices sp
+					ON md.dt = sp.date;
+                    
+-- 4. With two window functions
+WITH RECURSIVE my_dates(dt) AS (SELECT '2024-11-01'
+								UNION ALL
+								SELECT dt + INTERVAL 1 DAY
+								FROM my_dates
+								WHERE dt < '2024-11-06'),
+                                
+	 sp AS (SELECT	md.dt, sp.price
+			FROM	my_dates md
+					LEFT JOIN stock_prices sp
+					ON md.dt = sp.date)
+                    
+SELECT 
+	dt, price,
+    COALESCE(price, 600) AS updated_price_600,
+    COALESCE(price, ROUND((SELECT AVG(price) FROM sp), 2)) AS updated_price_avg,
+    COALESCE(price, LAG(price) OVER()) AS updated_price_prior,
+    COALESCE(price, ROUND((LAG(price) OVER() + LEAD(price) OVER()) / 2,2)) AS updated_price_smoothing
+FROM sp
